@@ -115,7 +115,7 @@ local function duplication_formspec(player, page)
 	end
 
 	----The page number label's text is stored here because it is used more than once.
-	local pageString = tostring(rnd.duplication.currentPage[pname]).."/"..tostring(math.ceil(countComplete(pname) / 32))
+	local pageString = tostring(rnd.duplication.currentPage[pname]).."/"..tostring(math.max(math.ceil(countComplete(pname) / 32), 1))
 
 	--With all of the above information, the formspec can be formed here.
 	--Note that every time information changes, the menu is reformed.
@@ -176,10 +176,10 @@ local function on_player_receive_fields_duplication(player, formname, fields, co
 			page = math.max(1, page - 1)
 		--Increase the page number. If it exceeds the last page, set it back to the last page.
 		elseif fields["next"] then
-			page = math.min(math.ceil(countComplete(pname) / 32), page + 1)
+			page = math.max(1, math.min(math.ceil(countComplete(pname) / 32), page + 1))
 		--Get the amount of pages to find the last page.
 		elseif fields["last"] then
-			page = math.ceil(countComplete(pname) / 32)
+			page = math.max(math.ceil(countComplete(pname) / 32), 1)
 		end
 
 		--When a page changes, the duplication menu has to be reformed.
