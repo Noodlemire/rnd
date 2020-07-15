@@ -23,6 +23,9 @@ rnd.duplication = {}
 --Stores each player's current selected duplication page, which is important only so that page selection works at all.
 rnd.duplication.currentPage = {}
 
+-- Translation support
+local S = minetest.get_translator("rnd")
+local F = minetest.formspec_escape
 
 
 --Create both the player's duplication inventory, and a hidden trash inventory so that items in the survival inventory can be shift-click-dumped.
@@ -52,8 +55,8 @@ local function spairs(t)
 	--Collect the keys
 	local keys = {}
 
-	for k in pairs(t) do 
-		keys[#keys + 1] = k 
+	for k in pairs(t) do
+		keys[#keys + 1] = k
 	end
 
 	--Sort them
@@ -125,7 +128,7 @@ local function duplication_formspec(player, page)
 		"button[2.5,4;1,1;prev;<]"..
 		"button[4.5,4;1,1;next;>]"..
 		"button[5.5,4;1,1;last;>>]"..
-		"label[3.7,4;Page]"..
+		"label[3.7,4;"..F(S("Page")).."]"..
 		"label["..tostring(3.9 - 0.05 * pageString:len())..",4.25;"..pageString.."]"..
 		"list[current_player;duplication;0,0;8,4;]"..
 		"listring[current_player;duplication]"..
@@ -134,13 +137,11 @@ local function duplication_formspec(player, page)
 end
 
 --This function prevents players from placing anything inside the duplication inventory.
-function rnd.duplication.allow_player_inventory_action(player, action, inventory, inventory_info)
+minetest.register_allow_player_inventory_action(function(player, action, inventory, inventory_info)
 	if (action == "put" and inventory_info.listname == "duplication") or (action == "move" and inventory_info.to_list == "duplication") then
 		return 0
 	end
-
-	return inventory_info.count or inventory_info.stack:get_count()
-end
+end)
 
 --This function refills the duplication inventory whenever something is removed, and empties the trash slot whenever it is filled.
 minetest.register_on_player_inventory_action(function(player, action, inventory, inventory_info)
@@ -198,13 +199,13 @@ minetest.register_on_player_receive_fields(on_player_receive_fields_duplication)
 --For use when sfinv isn't active.
 minetest.register_chatcommand("duplicate", {
 	params = "",
-	description = "Open the duplication menu.",
+	description = S("Open the duplication menu."),
 	privs = {},
 
 	func = function(name, param)
 		--Block creative players from using it.
 		if minetest.settings:get_bool("creative_mode") or (creative and creative.is_enabled_for(name)) then
-			minetest.chat_send_player(name, "Creative Mode players can't use this.")
+			minetest.chat_send_player(name, S("Creative Mode players can't use this."))
 		else
 			minetest.show_formspec(name, "duplication", duplication_formspec(minetest.get_player_by_name(name)))
 		end
@@ -214,7 +215,7 @@ minetest.register_chatcommand("duplicate", {
 --When sfinv is active, the duplication tab is defined here, using several previously defined functions.
 if sfinv then
 	sfinv.register_page("duplication", {
-		title = "Duplicate",
+		title = S("Duplicate"),
 
 		get = function(self, player, context)
 			return sfinv.make_formspec(player, context, duplication_formspec(player, rnd.duplication.currentPage[player:get_player_name()]))
