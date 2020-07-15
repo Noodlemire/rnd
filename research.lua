@@ -20,14 +20,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 --file-specific global storage
 rnd.research = {}
 
---Every researchable item has a specific amount needed to be researched in order to unlock duplication. 
+--Every researchable item has a specific amount needed to be researched in order to unlock duplication.
 --This table stores the research requirement of each, indexed by item name.
 rnd.research.goals = {}
 
 --Tracks research progress of each item of each player
 rnd.research.progs = {}
 
---This variable is needed to prevent buggy behavior when players grab an item from the sfinv research tab, 
+-- Translation support
+local S = minetest.get_translator("rnd")
+local F = minetest.formspec_escape
+
+--This variable is needed to prevent buggy behavior when players grab an item from the sfinv research tab,
 --switch to a different tab, and place the item somewhere.
 --Without it, the game erroneously displays the /research menu in this scenario.
 local normal_research_menu_active = {}
@@ -36,7 +40,7 @@ local normal_research_menu_active = {}
 
 --In research.txt, research requirements of entire groups can be defined.
 --In case an item fits into numberous groups, the smallest research requirement takes precedent over larger research requirements.
---Note that if a multi-group item is named specifically in research.txt or fits into group:rnd_goal, 
+--Note that if a multi-group item is named specifically in research.txt or fits into group:rnd_goal,
 --that research requirement is used no matter how many group requirements are defined.
 --The point of returning rnd.research.goals[item] is to confirm that anything was found at all for an if statement.
 local function find_research_groups(item, research_specs)
@@ -95,17 +99,17 @@ end)
 minetest.register_on_joinplayer(function(player)
 	local pname = player:get_player_name()
 
-	--If the current game/world doesn't use the sfinv mod, commands are used to view menus. 
+	--If the current game/world doesn't use the sfinv mod, commands are used to view menus.
 	--This might not be intuitive, so players are reminded each time they join.
 	--When sfinv is used, this isn't necessary, as those menus are integrated to the survival inventory.
 	if not sfinv then
 		--Research mode is redundant if the player already has creative mode.
 		--This also saves on a bit of memory, since a progs table won't be created for creative players.
 		if minetest.settings:get_bool("creative_mode") or (creative and creative.is_enabled_for(pname)) then
-			minetest.chat_send_player(pname, "Warning: You are in creative mode. Research and Duplication is disabled in favor of the default creative inventory.")
+			minetest.chat_send_player(pname, S("Warning: You are in creative mode. Research and Duplication is disabled in favor of the default creative inventory."))
 			return
 		else
-			minetest.chat_send_player(pname, "Research and Duplication is active. You can use /research and /duplicate to bring up their respective menus.")
+			minetest.chat_send_player(pname, S)("Research and Duplication is active. You can use /research and /duplicate to bring up their respective menus.")
 		end
 	end
 
@@ -207,7 +211,7 @@ local function research_formspec(player)
 	return rnd.base_inv_formspec..
 		"label["..tostring(4 - 0.05 * item.name:len())..",1.75;"..item.name.."]"..
 		"label["..tostring(3.9 - 0.05 * progString:len())..",2;"..progString.."]"..
-		"button[3,2.5;2,1;research;Research]"..
+		"button[3,2.5;2,1;research;"..F(S("Research")).."]"..
 		"list[current_player;research;0,3.5;8,1;]"..
 		"listring[]"
 end
@@ -331,13 +335,13 @@ minetest.register_on_player_receive_fields(on_player_receive_fields_research)
 --For use when sfinv isn't active.
 minetest.register_chatcommand("research", {
 	params = "",
-	description = "Open the research menu.",
+	description = S("Open the research menu."),
 	privs = {},
 
 	func = function(name, param)
 		--Block creative players from using it.
 		if minetest.settings:get_bool("creative_mode") or (creative and creative.is_enabled_for(name)) then
-			minetest.chat_send_player(name, "Creative Mode players can't use this.")
+			minetest.chat_send_player(name, S("Creative Mode players can't use this."))
 		else
 			--Remember that the /research menu is being used right now.
 			normal_research_menu_active[name] = true
@@ -350,7 +354,7 @@ minetest.register_chatcommand("research", {
 --When sfinv is active, the research tab is defined here, using several previously defined functions.
 if sfinv then
 	sfinv.register_page("research", {
-		title = "Research",
+		title = S("Research"),
 
 		get = function(self, player, context)
 			return sfinv.make_formspec(player, context, research_formspec(player))
