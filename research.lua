@@ -236,7 +236,6 @@ minetest.register_allow_player_inventory_action(function(player, action, invento
 		end
 
 		--If we got this far, we can let the itemstack into the research inventory.
-		return inventory_info.count
 	end
 
 	--For sorting purposes, the next part of the function is in duplication.lua.
