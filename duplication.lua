@@ -134,13 +134,11 @@ local function duplication_formspec(player, page)
 end
 
 --This function prevents players from placing anything inside the duplication inventory.
-function rnd.duplication.allow_player_inventory_action(player, action, inventory, inventory_info)
+minetest.register_allow_player_inventory_action(function(player, action, inventory, inventory_info)
 	if (action == "put" and inventory_info.listname == "duplication") or (action == "move" and inventory_info.to_list == "duplication") then
 		return 0
 	end
-
-	return inventory_info.count or inventory_info.stack:get_count()
-end
+end)
 
 --This function refills the duplication inventory whenever something is removed, and empties the trash slot whenever it is filled.
 minetest.register_on_player_inventory_action(function(player, action, inventory, inventory_info)

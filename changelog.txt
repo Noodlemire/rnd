@@ -1,0 +1,1 @@
+fixed compatability issue where other mods wouldn't be able to use minetest.register_allow_player_inventory_action
