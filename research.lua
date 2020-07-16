@@ -178,7 +178,7 @@ end
 
 
 --This function creates the research menu.
-local function research_formspec(player)
+local function research_formspec(player, unified)
 	--Get the player's inventory to look through later.
 	local inv = player:get_inventory()
 
@@ -206,13 +206,19 @@ local function research_formspec(player)
 	--The progress label's text is stored here because it is used more than once.
 	local progString = "("..item.count.."/"..item.goal..")"
 
+	--Show a different inventory layout based on if the unified_inventory is open or not
+	local base_inv = rnd.base_inv_formspec
+	if unified then
+		base_inv = rnd.base_unified_formspec
+	end
+
 	--With all of the above information, the formspec can be formed here.
 	--Note that every time information changes, the menu is reformed.
-	return rnd.base_inv_formspec..
-		"label["..tostring(4 - 0.05 * item.name:len())..",1.75;"..item.name.."]"..
-		"label["..tostring(3.9 - 0.05 * progString:len())..",2;"..progString.."]"..
-		"button[3,2.5;2,1;research;"..F(S("Research")).."]"..
-		"list[current_player;research;0,3.5;8,1;]"..
+	return base_inv..
+		"label["..tostring(4 - 0.05 * item.name:len())..",0.75;"..item.name.."]"..
+		"label["..tostring(3.9 - 0.05 * progString:len())..",1;"..progString.."]"..
+		"button[3,1.5;2,1;research;"..F(S("Research")).."]"..
+		"list[current_player;research;0,2.5;8,1;]"..
 		"listring[]"
 end
 
@@ -249,7 +255,9 @@ minetest.register_on_player_inventory_action(function(player, action, inventory,
 		local pname = player:get_player_name()
 
 		--A different method must be used if the sfinv inventory is open, so the tabs still work after the reformation.
-		if sfinv and sfinv.get_or_create_context(player).page == "research" then
+		if (unified_inventory and not normal_research_menu_active[pname]) then
+			unified_inventory.set_inventory_formspec(player, "research")
+		elseif sfinv and sfinv.get_or_create_context(player).page == "research" then
 			sfinv.set_player_inventory_formspec(player)
 		--Check first that the /research menu is open. If it is, update it.
 		elseif normal_research_menu_active[pname] then
@@ -263,7 +271,7 @@ end)
 local function on_player_receive_fields_research(player, formname, fields, context)
 	local pname = player:get_player_name()
 
-	if formname == "research" and fields["research"] then
+	if fields["research"] and ((unified_inventory and formname == "") or (formname == "research")) then
 		--Get the player's inventory to look through later.
 		local inv = player:get_inventory()
 
@@ -293,7 +301,10 @@ local function on_player_receive_fields_research(player, formname, fields, conte
 			--Its placement here, before the research inventory is cleared, is important.
 			--This makes the research label "lag", so if all of the items are removed by research,
 			--The player will still see the total research progress for that item, rather than the usual (0/X)
-			if sfinv and context then
+			--However, unified_inventory is too aggressive for this trick to work. Sorry.
+			if unified_inventory and formname == "" then
+				unified_inventory.set_inventory_formspec(player, "research")
+			elseif sfinv and context then
 				sfinv.set_player_inventory_formspec(player)
 			else
 				minetest.show_formspec(pname, "research", research_formspec(player))
@@ -350,8 +361,29 @@ minetest.register_chatcommand("research", {
 	end,
 })
 
+--When unified_inventory is active, the research tab is defined here, using several previously defined functions.
+if unified_inventory then
+	unified_inventory.register_page("research", {
+		get_formspec = function(player)
+			return {
+				formspec = research_formspec(player, true),
+				draw_inventory = false,
+			}
+		end
+	})
+
+	unified_inventory.register_button("research", {
+		type = "image",
+		image = "rnd_button_research_page.png",
+		tooltip = S("Research"),
+
+		condition = function(player)
+			return not unified_inventory.is_creative(player)
+		end
+	})
+
 --When sfinv is active, the research tab is defined here, using several previously defined functions.
-if sfinv then
+elseif sfinv then
 	sfinv.register_page("research", {
 		title = S("Research"),
 

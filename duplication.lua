@@ -32,7 +32,6 @@ local F = minetest.formspec_escape
 function rnd.duplication.init(player)
 	player:get_inventory():set_size("duplication", 32)
 	player:get_inventory():set_size("trash", 1)
-	minetest.log("init trash")
 end
 
 
@@ -75,7 +74,7 @@ local function spairs(t)
 end
 
 --This function creates the duplication menu.
-local function duplication_formspec(player, page)
+local function duplication_formspec(player, page, unified)
 	local pname = player:get_player_name()
 
 	--Get the player's inventory to look through later.
@@ -120,17 +119,25 @@ local function duplication_formspec(player, page)
 	----The page number label's text is stored here because it is used more than once.
 	local pageString = tostring(rnd.duplication.currentPage[pname]).."/"..tostring(math.max(math.ceil(countComplete(pname) / 32), 1))
 
+	--Show a different inventory layout based on if the unified_inventory is open or not
+	local base_inv = rnd.base_inv_formspec
+	local btn_height = 4.05
+	if unified then
+		base_inv = rnd.base_unified_formspec
+		btn_height = 3.7
+	end
+
 	--With all of the above information, the formspec can be formed here.
 	--Note that every time information changes, the menu is reformed.
 	--Also, note the extra listring to trash, which enables deletion of items in the survival inventory via shift-clicking.
-	return rnd.base_inv_formspec..
-		"button[1.5,4;1,1;frst;<<]"..
-		"button[2.5,4;1,1;prev;<]"..
-		"button[4.5,4;1,1;next;>]"..
-		"button[5.5,4;1,1;last;>>]"..
-		"label[3.7,4;"..F(S("Page")).."]"..
-		"label["..tostring(3.9 - 0.05 * pageString:len())..",4.25;"..pageString.."]"..
-		"list[current_player;duplication;0,0;8,4;]"..
+	return base_inv..
+		"button[1.5,"..btn_height..";1,1;frst;<<]"..
+		"button[2.5,"..btn_height..";1,1;prev;<]"..
+		"button[4.5,"..btn_height..";1,1;next;>]"..
+		"button[5.5,"..btn_height..";1,1;last;>>]"..
+		"label[3.7,"..(btn_height+0.05)..";"..F(S("Page")).."]"..
+		"label["..tostring(3.9 - 0.05 * pageString:len())..","..(btn_height+0.3)..";"..pageString.."]"..
+		"list[current_player;duplication;0,-0.1;8,4;]"..
 		"listring[current_player;duplication]"..
 		"listring[current_player;main]"..
 		"listring[current_player;trash]"
@@ -165,7 +172,7 @@ end)
 --This function is defined like this because it is used in two different places, one for sfinv and one that is used for /duplicate.
 local function on_player_receive_fields_duplication(player, formname, fields, context)
 	--If one of the four buttons were pressed...
-	if formname == "duplication" and (fields["frst"] or fields["prev"] or fields["next"] or fields["last"]) then
+	if ((unified_inventory and formname == "") or formname == "duplication") and (fields["frst"] or fields["prev"] or fields["next"] or fields["last"]) then
 		local pname = player:get_player_name()
 		local page = rnd.duplication.currentPage[pname]
 
@@ -185,7 +192,10 @@ local function on_player_receive_fields_duplication(player, formname, fields, co
 
 		--When a page changes, the duplication menu has to be reformed.
 		--A different method must be used if the sfinv inventory is open, so the tabs still work after the reformation.
-		if sfinv and context then
+		if unified_inventory and formname == "" then
+			rnd.duplication.currentPage[pname] = page
+			unified_inventory.set_inventory_formspec(player, "duplication")
+		elseif sfinv and context then
 			rnd.duplication.currentPage[pname] = page
 			sfinv.set_player_inventory_formspec(player)
 		else
@@ -212,8 +222,29 @@ minetest.register_chatcommand("duplicate", {
 	end,
 })
 
+--When unified_inventory is active, the duplication tab is defined here, using several previously defined functions.
+if unified_inventory then
+	unified_inventory.register_page("duplication", {
+		get_formspec = function(player)
+			return {
+				formspec = duplication_formspec(player, rnd.duplication.currentPage[player:get_player_name()], true),
+				draw_inventory = false,
+			}
+		end
+	})
+
+	unified_inventory.register_button("duplication", {
+		type = "image",
+		image = "rnd_button_duplication_page.png",
+		tooltip = S("Duplicate"),
+
+		condition = function(player)
+			return not unified_inventory.is_creative(player)
+		end
+	})
+
 --When sfinv is active, the duplication tab is defined here, using several previously defined functions.
-if sfinv then
+elseif sfinv then
 	sfinv.register_page("duplication", {
 		title = S("Duplicate"),
 

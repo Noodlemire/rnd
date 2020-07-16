@@ -38,6 +38,11 @@ rnd.base_inv_formspec = "size[8,9.1]"..
 			"list[current_player;main;0,6.35;8,3;8]"..
 			hotbar_bg
 
+if unified_inventory then
+	rnd.base_unified_formspec = 
+			"list[current_player;main;0,4.5;8,4;]"
+end
+
 
 
 --A custom API file that I find a little more convenient than the usual mod storage API.
