@@ -11,7 +11,7 @@ This mod is inspired directly by the main feature of Terraria's "Journey Mode". 
 -------------------------------------------------------------------------------------------------------------
 Dependencies and Support
 -------------------------------------------------------------------------------------------------------------
-No hard dependencies are necessary. There is support for sfinv, though, which lets the research and duplication menus appear as tabs in the regular survival inventory. Without it, those menus are accessed through the /research and /duplicate commands.
+No hard dependencies are necessary. There is support for sfinv and unified_inventory, though, which lets the research and duplication menus appear as tabs in the regular survival inventory. Without either, those menus are accessed through the /research and /duplicate commands.
 
 -------------------------------------------------------------------------------------------------------------
 License
